@@ -18,13 +18,7 @@ public class Main {
         logger.info("User Service Application started");
 
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Welcome to User Service! Available commands:");
-        System.out.println("create <name> <email> <age> - Create a new user");
-        System.out.println("read <id> - Read user by ID");
-        System.out.println("update <id> <new_name> <new_email> <new_age> - Update user");
-        System.out.println("delete <id> - Delete user by ID");
-        System.out.println("list - List all users");
-        System.out.println("exit - Exit the application");
+        printMenu();
 
         while (true) {
             System.out.print("\nEnter command: ");
@@ -116,5 +110,15 @@ public class Main {
             }
         }
 
+    }
+
+    private static void printMenu() {
+        System.out.println("Welcome to User Service! Available commands:");
+        System.out.println("create <name> <email> <age> - Create a new user");
+        System.out.println("read <id> - Read user by ID");
+        System.out.println("update <id> <new_name> <new_email> <new_age> - Update user");
+        System.out.println("delete <id> - Delete user by ID");
+        System.out.println("list - List all users");
+        System.out.println("exit - Exit the application");
     }
 }

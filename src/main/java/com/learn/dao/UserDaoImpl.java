@@ -1,6 +1,7 @@
 package com.learn.dao;
 
 import com.learn.entity.User;
+import com.learn.exception.UserDaoException;
 import com.learn.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class UserDaoImpl implements UserDao {
     private static final Logger logger = LoggerFactory.getLogger(UserDaoImpl.class);
@@ -22,95 +25,67 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public void create(User user) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+        executeTransaction("creating", session -> {
             session.persist(user);
-            transaction.commit();
-            logger.info("User created: {}", user);
-        } catch (ConstraintViolationException e) {
-            handleRollback(transaction);
-            logger.error("Constraint violation: {}", e.getMessage());
-            throw new RuntimeException("Error creating user: duplicate email or invalid data");
-        } catch (Exception e) {
-            handleRollback(transaction);
-            logger.error("Error creating user", e);
-            throw new RuntimeException("Error creating user: " + e.getMessage());
-        }
+            return user;
+        }, result -> logger.info("User created: {}", result));
     }
 
     @Override
     public User read(Long id) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
-            User user = session.get(User.class, id);
-            transaction.commit();
-            if (user == null) {
-                throw new RuntimeException("User not found with id: " + id);
+        return executeTransaction("reading", session -> session.get(User.class, id), result -> {
+            if (result == null) {
+                throw new UserDaoException("User not found with id: " + id);
             }
-            logger.info("User read: {}", user);
-            return user;
-        } catch (Exception e) {
-            handleRollback(transaction);
-            logger.error("Error reading user", e);
-            throw new RuntimeException("Error reading user: " + e.getMessage());
-        }
+            logger.info("User read: {}", result);
+        });
     }
 
     @Override
     public void update(User user) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+        executeTransaction("updating", session -> {
             session.merge(user);
-            transaction.commit();
-            logger.info("User updated: {}", user);
-        } catch (ConstraintViolationException e) {
-            handleRollback(transaction);
-            logger.error("Constraint violation: {}", e.getMessage());
-            throw new RuntimeException("Error updating user: duplicate email or invalid data");
-        } catch (Exception e) {
-            handleRollback(transaction);
-            logger.error("Error updating user", e);
-            throw new RuntimeException("Error updating user: " + e.getMessage());
-        }
+            return user;
+        }, result -> logger.info("User updated: {}", result));
     }
 
     @Override
     public void delete(Long id) {
-        Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
-            transaction = session.beginTransaction();
+        executeTransaction("deleting", session -> {
             User user = session.get(User.class, id);
-            if (user != null) {
-                session.remove(user);
-                transaction.commit();
-                logger.info("User deleted with id: {}", id);
-            } else {
-                throw new RuntimeException("User not found with id: " + id);
+            if (user == null) {
+                throw new UserDaoException("User not found with id: " + id);
             }
-        } catch (Exception e) {
-            handleRollback(transaction);
-            logger.error("Error deleting user", e);
-            throw new RuntimeException("Error deleting user: " + e.getMessage());
-        }
+            session.remove(user);
+            return id;
+        }, result -> logger.info("User deleted with id: {}", result));
     }
 
     @Override
     public List<User> findAll() {
+        return executeTransaction("finding all", session -> {
+            Query<User> query = session.createQuery("FROM User", User.class);
+            return query.list();
+        }, result -> logger.info("Found {} users", result.size()));
+    }
+
+    private <T> T executeTransaction(String operation, Function<Session, T> action, Consumer<T> postSuccess) {
         Transaction transaction = null;
         try (Session session = sessionFactory.openSession()) {
             transaction = session.beginTransaction();
-            Query<User> query = session.createQuery("FROM User", User.class);
-            List<User> users = query.list();
+            T result = action.apply(session);
             transaction.commit();
-            logger.info("Found {} users", users.size());
-            return users;
+            postSuccess.accept(result);
+            return result;
         } catch (Exception e) {
             handleRollback(transaction);
-            logger.error("Error finding all users", e);
-            throw new RuntimeException("Error finding all users: " + e.getMessage());
+            if (e instanceof ConstraintViolationException) {
+                logger.error("Constraint violation in {} user: {}", operation, e.getMessage(), e);
+                throw new UserDaoException("Error " + operation + " user: duplicate email or invalid data", e);
+            } else {
+                logger.error("Error {} user", operation, e);
+                throw new UserDaoException("Error " + operation + " user", e);
+            }
         }
     }
 

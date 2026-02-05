@@ -1,5 +1,6 @@
 package com.learn.util;
 
+import com.learn.exception.ConfigLoaderException;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.InputStream;
@@ -16,7 +17,7 @@ public class ConfigLoader {
         Yaml yaml = new Yaml();
         InputStream inputStream = ConfigLoader.class.getClassLoader().getResourceAsStream("hibernate.yml");
         if (inputStream == null) {
-            throw new RuntimeException("hibernate.yml not found in resources");
+            throw new ConfigLoaderException("hibernate.yml not found in resources", new RuntimeException());
         }
 
         @SuppressWarnings("unchecked")

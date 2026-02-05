@@ -8,5 +8,5 @@ hibernate:
   show_sql: true
   format_sql: true
   hbm2ddl:
-    auto: update  # 'create' для первого запуска (сотрёт данные), потом 'update'
+    auto: update
   current_session_context_class: thread
