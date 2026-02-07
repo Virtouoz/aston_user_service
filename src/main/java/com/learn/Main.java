@@ -3,6 +3,8 @@ package com.learn;
 import com.learn.dao.UserDao;
 import com.learn.dao.UserDaoImpl;
 import com.learn.entity.User;
+import com.learn.service.UserService;
+import com.learn.service.impl.UserServiceImpl;
 import com.learn.util.HibernateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +12,11 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Scanner;
 
+// (Main -> Service -> DAO).
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
     private static final UserDao userDao = new UserDaoImpl();
+    private static final UserService userService = new UserServiceImpl(userDao);
 
     public static void main(String[] args) {
         logger.info("User Service Application started");
@@ -39,7 +43,7 @@ public class Main {
                         String email = parts[2];
                         int age = Integer.parseInt(parts[3]);
                         User newUser = new User(name, email, age);
-                        userDao.create(newUser);
+                        userService.createUser(newUser);
                         System.out.println("User created: " + newUser);
                         break;
 
@@ -49,7 +53,7 @@ public class Main {
                             break;
                         }
                         Long readId = Long.parseLong(parts[1]);
-                        User readUser = userDao.read(readId);
+                        User readUser = userService.getUserById(readId);
                         System.out.println("User: " + readUser);
                         break;
 
@@ -64,7 +68,7 @@ public class Main {
                         int newAge = Integer.parseInt(parts[4]);
                         User updateUser = new User(newName, newEmail, newAge);
                         updateUser.setId(updateId);
-                        userDao.update(updateUser);
+                        userService.updateUser(updateUser);
                         System.out.println("User updated: " + updateUser);
                         break;
 
@@ -74,12 +78,12 @@ public class Main {
                             break;
                         }
                         Long deleteId = Long.parseLong(parts[1]);
-                        userDao.delete(deleteId);
+                        userService.deleteUser(deleteId);
                         System.out.println("User deleted with ID: " + deleteId);
                         break;
 
                     case "list":
-                        List<User> users = userDao.findAll();
+                        List<User> users = userService.getAllUsers();
                         if (users.isEmpty()) {
                             System.out.println("No users found.");
                         } else {
