@@ -5,9 +5,9 @@ import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -20,7 +20,7 @@ class UserDaoImplIntegrationTest {
     private static final Logger logger = LoggerFactory.getLogger(UserDaoImplIntegrationTest.class);
 
     @Container
-    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
+    private static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16")
             .withDatabaseName("testdb")
             .withUsername("test")
             .withPassword("test");

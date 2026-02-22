@@ -23,6 +23,10 @@ public class UserDaoImpl implements UserDao {
         this.sessionFactory = HibernateUtil.getSessionFactory();
     }
 
+    public UserDaoImpl(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
     @Override
     public void create(User user) {
         executeTransaction("creating", session -> {
@@ -33,12 +37,13 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User read(Long id) {
-        return executeTransaction("reading", session -> session.get(User.class, id), result -> {
-            if (result == null) {
+        return executeTransaction("reading", session -> {
+            User user = session.get(User.class, id);
+            if (user == null) {
                 throw new UserDaoException("User not found with id: " + id);
             }
-            logger.info("User read: {}", result);
-        });
+            return user;
+        }, result -> logger.info("User read: {}", result));
     }
 
     @Override
