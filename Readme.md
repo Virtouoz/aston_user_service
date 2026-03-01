@@ -1,25 +1,31 @@
 # User Service
 
-Консольное приложение для CRUD-операций над пользователями в PostgreSQL с использованием Hibernate (без Spring).
+**REST API** для управления пользователями (CRUD) на **Spring Boot + Spring Data JPA**.
 
 ## ✨ Возможности
-- Полноценный CRUD (Create, Read, Update, Delete, List)
-- Автоматическая генерация `created_at` (@CreationTimestamp)
-- Валидация данных в сервисном слое
-- Транзакции + корректный rollback
-- Логирование в консоль + файл с ротацией
-- Обработка всех исключений (свои кастомные исключения)
+
+- Полноценный REST API (`POST`, `GET`, `PUT`, `DELETE`, `GET /all`)
+- **DTO** вместо Entity в ответах контроллера
+- Валидация данных (`@Valid` + Jakarta Validation)
+- Spring Data JPA (Hibernate заменён полностью)
+- Глобальная обработка исключений
+- Автоматическая генерация `created_at`
+- Транзакции
+- Логирование в консоль + файл (с ротацией)
+- Unit-тесты API на **MockMvc + Mockito**
 
 ## 🛠 Технологии
+
 - **Java 17**
-- **Hibernate 6.6** (ORM)
+- **Spring Boot 3.3.5** (Web, Data JPA, Validation)
+- **Spring Data JPA**
 - **PostgreSQL**
 - **Maven**
-- **SLF4J + Logback** (логирование)
-- **YAML** конфигурация Hibernate
-- **JUnit 5 + Mockito + Testcontainers** (тесты)
+- **SLF4J + Logback**
+- **JUnit 5 + Mockito + MockMvc** (тесты)
 
 ## 📋 Требования
+
 - Java 17
 - Maven 3.6+
 - PostgreSQL (локально или в Docker)
@@ -27,67 +33,79 @@
 ## 🚀 Запуск
 
 ### 1. Настройка базы данных
+
+Убедится в `src/main/resources/application.yml`, что данные верные:
+
 ```yaml
-# hibernate.yml
-hibernate:
-  connection:
+spring:
+  datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: postgres   # ← поменяй на свой
-  ...
+    password: postgres
 ```
 
 ### 2. Сборка и запуск
+
 ```Bash
 mvn clean install
-mvn exec:java -Dexec.mainClass="com.learn.Main"
+mvn spring-boot:run
 ```
-## 📌 Доступные команды
 
-| Команда | Описание |
-|---------|----------|
-|create <name> <email> <age>|Создать пользователя|
-|read <id>|Показать пользователя по ID|
-|update <id> <new_name> <new_email> <new_age>|Обновить пользователя|
-|delete <id>|Удалить пользователя|
-|list|Показать всех пользователей|
-|exit|Выйти из приложения|
+## 📌 API Endpoints
+
+| Метод  | URL             | Описание              | Тело запроса      | Ответ                 |
+|--------|-----------------|-----------------------|-------------------|-----------------------|
+| POST   | /api/users      | Создать пользователя  | CreateUserRequest | UserResponseDto (201) |
+| GET    | /api/users/{id} | Получить по ID        | —                 | UserResponseDto       |
+| GET    | /api/users      | Получить всех         | —                 | List<UserResponseDto> |
+| PUT    | /api/users/{id} | Обновить пользователя | CreateUserRequest | UserResponseDto       |
+| DELETE | /api/users/{id} | Удалить пользователя  | —                 | 204 No Content        |
+
+### Пример запроса (POST / PUT):
+```json
+{
+  "name": "Test Test",
+  "email": "test@test.com",
+  "age": 30
+}
+```
 
 ## 🧪 Тесты
+
 ```bash
-# Только unit-тесты сервиса
-mvn test -Dtest=UserServiceImplTest
+# Все тесты
+mvn test
 
-# Только интеграционные тесты DAO (с Testcontainers)
-mvn test -Dtest=UserDaoImplIntegrationTest
-
-# Отчёт по покрытию кода (JaCoCo)
-mvn jacoco:report
-# Отчёт будет в: target/site/jacoco/index.html
+# Только тесты контроллера
+mvn test -Dtest=UserControllerTest
 ```
 
 ### Результаты тестов:
 
-- Unit-тесты (Mockito): 9 тестов
-- Интеграционные тесты (Testcontainers + реальная PostgreSQL): 5 тестов
-- Тесты полностью изолированы
+- 7 unit-тестов контроллера (MockMvc)
+- Полное покрытие всех эндпоинтов (успех + ошибки валидации + not found)
 
 ## 📁 Структура проекта
+
 ```text
-textsrc/main/java/com/learn/
-├── Main.java
-├── dao/
-│   ├── UserDao.java
-│   └── UserDaoImpl.java
+src/main/java/com/learn/
+├── UserServiceApplication.java
+├── controller/
+│   └── UserController.java
+├── dto/
+│   ├── CreateUserRequest.java
+│   └── UserResponseDto.java
+├── entity/
+│   └── User.java
+├── exception/
+│   └── GlobalExceptionHandler.java
+├── repository/
+│   └── UserRepository.java
 ├── service/
 │   ├── UserService.java
-│   └── impl/UserServiceImpl.java
-├── entity/User.java
-├── exception/
-├── util/
-│   ├── HibernateUtil.java
-│   └── ConfigLoader.java
+│   └── impl/
+│       └── UserServiceImpl.java
 └── resources/
-    ├── hibernate.yml
+    ├── application.yml
     └── logback.xml
 ```

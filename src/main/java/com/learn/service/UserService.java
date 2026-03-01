@@ -1,17 +1,18 @@
 package com.learn.service;
 
-import com.learn.entity.User;
+import com.learn.dto.CreateUserRequest;
+import com.learn.dto.UserResponseDto;
 
 import java.util.List;
 
 public interface UserService {
-    void createUser(User user);
+    UserResponseDto createUser(CreateUserRequest request);
 
-    User getUserById(Long id);
+    UserResponseDto getUserById(Long id);
 
-    void updateUser(User user);
+    UserResponseDto updateUser(Long id, CreateUserRequest request);
 
     void deleteUser(Long id);
 
-    List<User> getAllUsers();
+    List<UserResponseDto> getAllUsers();
 }

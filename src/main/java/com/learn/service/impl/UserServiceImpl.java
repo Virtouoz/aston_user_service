@@ -1,56 +1,78 @@
 package com.learn.service.impl;
 
-import com.learn.dao.UserDao;
+import com.learn.dto.CreateUserRequest;
+import com.learn.dto.UserResponseDto;
 import com.learn.entity.User;
+import com.learn.repository.UserRepository;
 import com.learn.service.UserService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Service
 public class UserServiceImpl implements UserService {
-    private final UserDao userDao;
 
-    public UserServiceImpl(UserDao userDao) {
-        this.userDao = userDao;
+    private final UserRepository userRepository;
+
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
-    public void createUser(User user) {
-        // Валидация: имя, email не null, возраст > 0
-        if (user.getName() == null || user.getEmail() == null || user.getAge() <= 0) {
-            throw new IllegalArgumentException("Invalid user data");
-        }
-        userDao.create(user);
+    @Transactional
+    public UserResponseDto createUser(CreateUserRequest request) {
+        User user = new User(request.getName(), request.getEmail(), request.getAge());
+        User saved = userRepository.save(user);
+        return mapToDto(saved);
     }
 
     @Override
-    public User getUserById(Long id) {
-        // Валидация: ID не null и > 0
-        if (id == null || id <= 0) {
-            throw new IllegalArgumentException("Invalid user ID");
-        }
-        return userDao.read(id);
+    @Transactional(readOnly = true)
+    public UserResponseDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        return mapToDto(user);
     }
 
     @Override
-    public void updateUser(User user) {
-        // Валидация: ID обязателен для обновления
-        if (user.getId() == null) {
-            throw new IllegalArgumentException("User ID is required for update");
-        }
-        userDao.update(user);
+    @Transactional
+    public UserResponseDto updateUser(Long id, CreateUserRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setAge(request.getAge());
+
+        User updated = userRepository.save(user);
+        return mapToDto(updated);
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long id) {
-        // Валидация: ID не null и > 0
-        if (id == null || id <= 0) {
-            throw new IllegalArgumentException("Invalid user ID");
+        if (!userRepository.existsById(id)) {
+            throw new IllegalArgumentException("User not found with id: " + id);
         }
-        userDao.delete(id);
+        userRepository.deleteById(id);
     }
 
     @Override
-    public List<User> getAllUsers() {
-        return userDao.findAll();
+    @Transactional(readOnly = true)
+    public List<UserResponseDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    private UserResponseDto mapToDto(User user) {
+        return new UserResponseDto(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getAge(),
+                user.getCreatedAt()
+        );
     }
 }
