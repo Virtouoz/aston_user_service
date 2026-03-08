@@ -3,27 +3,31 @@ package com.learn.service.impl;
 import com.learn.dto.CreateUserRequest;
 import com.learn.dto.UserResponseDto;
 import com.learn.entity.User;
+import com.learn.event.UserEvent;
+import com.learn.kafka.UserEventProducer;
 import com.learn.repository.UserRepository;
 import com.learn.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final UserEventProducer eventProducer;
 
     @Override
     @Transactional
     public UserResponseDto createUser(CreateUserRequest request) {
         User user = new User(request.getName(), request.getEmail(), request.getAge());
         User saved = userRepository.save(user);
+
+        eventProducer.send(UserEvent.create(saved.getEmail(), saved.getId())); // ← событие
+
         return mapToDto(saved);
     }
 
@@ -52,10 +56,13 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new IllegalArgumentException("User not found with id: " + id);
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+
+        String email = user.getEmail();
         userRepository.deleteById(id);
+
+        eventProducer.send(UserEvent.delete(email, id));
     }
 
     @Override

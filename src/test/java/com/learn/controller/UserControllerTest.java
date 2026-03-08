@@ -105,7 +105,7 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test User")); // возвращается обновлённый
+                .andExpect(jsonPath("$.name").value("Updated User")); // возвращается обновлённый
     }
 
     @Test
