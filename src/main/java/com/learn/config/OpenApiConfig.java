@@ -12,8 +12,8 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Notification Service API")
-                        .description("Микросервис отправки email-уведомлений при создании/удалении пользователей через Kafka")
+                        .title("User Service API")
+                        .description("Микросервис управления пользователями с событиями в Kafka")
                         .version("1.0"));
     }
 }

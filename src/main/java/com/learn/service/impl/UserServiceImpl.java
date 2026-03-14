@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserService {
         User user = new User(request.getName(), request.getEmail(), request.getAge());
         User saved = userRepository.save(user);
 
-        eventProducer.send(UserEvent.create(saved.getEmail(), saved.getId())); // ← событие
+        eventProducer.send(UserEvent.create(saved.getEmail(), saved.getId()));
 
         return mapToDto(saved);
     }
